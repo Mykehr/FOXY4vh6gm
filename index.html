@@ -7,36 +7,73 @@
         <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
 
         <script>
+            var soundEnabled = false;
+
             AFRAME.registerComponent('videohandler', {
                 init: function () {
                     var marker = this.el;
                     this.vid = document.querySelector("#vid");
 
                     marker.addEventListener('markerFound', function () {
-                        this.toggle = true;
-
-                        this.vid.muted = false;
-                        this.vid.volume = 1.0;
-
-                        var playPromise = this.vid.play();
-
-                        if (playPromise !== undefined) {
-                            playPromise.catch(function (error) {
-                                console.log("Video play was blocked by the browser:", error);
-                            });
+                        if (soundEnabled) {
+                            this.vid.muted = false;
+                            this.vid.volume = 1.0;
+                        } else {
+                            // 最初は無音で再生して、黒画面を防ぐ
+                            this.vid.muted = true;
                         }
+
+                        this.vid.play().catch(function (error) {
+                            console.log("Video play blocked:", error);
+                        });
                     }.bind(this));
 
                     marker.addEventListener('markerLost', function () {
-                        this.toggle = false;
                         this.vid.pause();
                     }.bind(this));
                 },
             });
+
+            window.addEventListener('load', function () {
+                var startButton = document.querySelector("#startButton");
+                var vid = document.querySelector("#vid");
+
+                startButton.addEventListener('click', function () {
+                    soundEnabled = true;
+
+                    vid.muted = false;
+                    vid.volume = 1.0;
+
+                    vid.play().catch(function (error) {
+                        console.log("Video play with sound blocked:", error);
+                    });
+
+                    startButton.style.display = "none";
+                });
+            });
         </script>
+
+        <style>
+            #startButton {
+                position: fixed;
+                z-index: 9999;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 12px 20px;
+                font-size: 16px;
+                background: #ffffff;
+                color: #000000;
+                border: none;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+        </style>
     </head>
 
     <body style="margin: 0; overflow: hidden;">
+        <button id="startButton">音声ONで開始</button>
+
         <a-scene
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
@@ -52,9 +89,11 @@
                     preload="auto"
                     response-type="arraybuffer"
                     loop
-                    crossorigin
+                    crossorigin="anonymous"
                     webkit-playsinline
                     playsinline
+                    autoplay
+                    muted
                 ></video>
             </a-assets>
 
